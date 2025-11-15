@@ -72,23 +72,23 @@ Dieses Projekt nutzt ein klares, entkoppeltes System, das über den `GameManager
 
 ##Projektstruktur
 
-Assets/Audio
-Assets/Audio/Music
-Assets/Audio/SFX
-Assets/Fonts
-Assets/Materials
-Assets/Prefabs
-Assets/Prefabs/Environment
-Assets/Prefabs/Gameplay
-Assets/Scenes
-Assets/Scripts
-Assets/Scripts/Core
-Assets/Scripts/Gameplay
-Assets/Scripts/Player
-Assets/Scripts/UI
-Assets/Settings
-Assets/Textures
-Assets/TextMeshPro
+* Assets/Audio
+* Assets/Audio/Music
+* Assets/Audio/SFX
+* Assets/Fonts
+* Assets/Materials
+* Assets/Prefabs
+* Assets/Prefabs/Environment
+* Assets/Prefabs/Gameplay
+* Assets/Scenes
+* Assets/Scripts
+* Assets/Scripts/Core
+* Assets/Scripts/Gameplay
+* Assets/Scripts/Player
+* Assets/Scripts/UI
+* Assets/Settings
+* Assets/Textures
+* Assets/TextMeshPro
 
 
 
