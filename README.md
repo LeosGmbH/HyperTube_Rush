@@ -92,6 +92,28 @@ Assets/
   └─ (Unity-Pakete wie TextMeshPro)
 
 
+
+# Projektstruktur
+
+Assets/
+├─ _Project/
+│  ├─ Audio/                     # Soundeffekte, Musik
+│ ├─ Fonts/                      # Schriftarten
+│ ├─ Materials/                  # Materialien für 3D-Objekte
+│ ├─ Prefabs/                    # Vorgefertigte Objekte
+│  │  ├─ Environment/            # z. B. TunnelSegment_Prefab
+│  │  └─ Gameplay/               # z. B. Obstacle_Prefab
+│  ├─ Scenes/                    # Spiel-Szenen
+│  │  └─ GameScene
+│  └─ Scripts/                   # Alle Skripte
+│     ├─ Core/                   # GameManager, ScoreManager, DifficultyManager
+│     ├─ Gameplay/               # WorldMover, TunnelSpawner, SegmentCleanup
+│     ├─ Player/                 # PlayerController, PlayerCollision
+│     └─ UI/                     # UIManager
+└─ (Unity-Pakete wie TextMeshPro)
+
+
+
   ---
 
 ## 🚀 Zukünftige Ideen (Roadmap)
