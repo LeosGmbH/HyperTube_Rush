@@ -70,6 +70,28 @@ Dieses Projekt nutzt ein klares, entkoppeltes System, das über den `GameManager
     * Aktualisiert alle Textanzeigen (Score, Highscore).
 
 
+##Projektstruktur
+
+Assets/Audio
+Assets/Audio/Music
+Assets/Audio/SFX
+Assets/Fonts
+Assets/Materials
+Assets/Prefabs
+Assets/Prefabs/Environment
+Assets/Prefabs/Gameplay
+Assets/Scenes
+Assets/Scripts
+Assets/Scripts/Core
+Assets/Scripts/Gameplay
+Assets/Scripts/Player
+Assets/Scripts/UI
+Assets/Settings
+Assets/Textures
+Assets/TextMeshPro
+
+
+
 ## 🚀 Zukünftige Ideen (Roadmap)
 
 * [ ] Integration von Sounds (Musik, Kollisions-SFX)
