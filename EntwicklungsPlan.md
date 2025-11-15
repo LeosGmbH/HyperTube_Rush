@@ -3,11 +3,24 @@ Entwicklungsplan: "Project TunnelRun" (Arbeitstitel)
 1. Projektstruktur & Unity-Setup
 
 1.1. Szenen
-Wir verwenden eine einzige Szene, um Ladezeiten zu minimieren und den State-Wechsel zu vereinfachen.
-GameScene: Enthält die gesamte Spiellogik, das Hauptmenü, das In-Game-UI und den Game-Over-Bildschirm.
+Wir verwenden eine modulare Multi-Scene-Architektur für bessere Skalierbarkeit und Wartbarkeit.
+
+```
+Assets/Scenes/
+├── Persistent.unity          // Core-Scene (läuft IMMER, wird nie entladen)
+├── MainMenu.unity            // Hauptmenü
+├── Game.unity                // Gameplay (bisheriger Tunnel-Runner)
+├── Shop.unity                // Platzhalter für zukünftige IAP/Skins
+└── Settings.unity            // Platzhalter für Optionen
+```
+
+**Beschreibung:**
+- **Persistent.unity**: Enthält GameManager, SceneLoader, ServiceLocator, AudioManager (später). Nutzt DontDestroyOnLoad() und bleibt während der gesamten App-Laufzeit aktiv.
+- **Additive Scene Loading**: Alle anderen Scenes werden additiv zur Persistent-Scene geladen/entladen.
+- **Vorteile**: Saubere Trennung von Core-Logik und Content, bessere Memory-Verwaltung, einfache Erweiterbarkeit.
 
 1.2. Ordnerstruktur
-Eine saubere Struktur ist essenziell.
+Eine saubere Struktur ist essenziell für die Wartbarkeit.
 
 ```
 Assets/Audio
@@ -24,6 +37,7 @@ Assets/Scripts/Core
 Assets/Scripts/Gameplay
 Assets/Scripts/Player
 Assets/Scripts/UI
+Assets/Scripts/Services     // Für zukünftige Monetarisierung
 Assets/Settings
 Assets/Textures
 Assets/TextMeshPro
@@ -91,25 +105,110 @@ TunnelSegment_Prefab | Ein Stück Tunnel (z.B. 20m lang). | Transform | Untagged
 
 3. Detaillierte Beschreibung der Skripte
 
-3.1. GameManager.cs
+3.0. Neue Kernkomponenten
+
+**SceneLoader.cs**
+Verantwortlichkeiten: Verwaltet das additive Laden/Entladen von Scenes.
+
+```csharp
+public class SceneLoader : MonoBehaviour {
+    public static SceneLoader Instance { get; private set; }
+    
+    private void Awake() {
+        if (Instance == null) {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        } else {
+            Destroy(gameObject);
+        }
+    }
+    
+    public void LoadScene(string sceneName) {
+        // Entlade alle aktiven Scenes außer Persistent
+        // Lade die neue Scene additiv
+        SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+    }
+}
+```
+
+**ServiceLocator.cs**
+Zentraler Hub für zukünftige Services.
+
+```csharp
+public class ServiceLocator : MonoBehaviour {
+    public static ServiceLocator Instance { get; private set; }
+    
+    // Referenzen zu allen Services
+    public AdService Ads { get; private set; }
+    public IAPService IAP { get; private set; }
+    
+    private void Awake() {
+        if (Instance == null) {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeServices();
+        } else {
+            Destroy(gameObject);
+        }
+    }
+    
+    private void InitializeServices() {
+        // Initialisiere alle Services
+        Ads = GetComponent<AdService>();
+        IAP = GetComponent<IAPService>();
+        
+        Debug.Log("All services initialized");
+    }
+}
+```
+
+**AdService.cs (Dummy)**
+```csharp
+// Placeholder für zukünftige Werbung-Integration
+public class AdService : MonoBehaviour {
+    // Leer lassen, nur Kommentare:
+    // - ShowInterstitial()
+    // - ShowRewarded()
+    // - RemoveAds()
+}
+```
+
+**IAPService.cs (Dummy)**
+```csharp
+// Placeholder für zukünftige In-App-Käufe
+public class IAPService : MonoBehaviour {
+    // Leer lassen, nur Kommentare:
+    // - PurchaseRemoveAds()
+    // - PurchaseSkin()
+    // - RestorePurchases()
+}
+```
+
+3.1. GameManager.cs (Aktualisiert)
 Kategorie: Core
 Verantwortlichkeiten: Steuert den globalen Spielzustand (State Machine), verwaltet Score und Schwierigkeit (ruft andere Skripte auf), koordiniert UI-Wechsel.
 
 Wichtige Variablen:
 ```csharp
 public static GameManager Instance { get; private set; } // Singleton
-public enum GameState { MainMenu, Running, GameOver }
+public enum GameState { MainMenu, Playing, GameOver, Shop }
 public GameState CurrentState { get; private set; }
 
 public UnityEvent OnGameStart;
 public UnityEvent OnGameOver;
 
 // Referenzen (im Inspector ziehen)
+[Header("UI References")]
 public UIManager uiManager;
+
+[Header("Gameplay References")]
 public ScoreManager scoreManager;
 public DifficultyManager difficultyManager;
 public WorldMover worldMover;
 public PlayerController playerController;
+
+// Scene Loader
+private SceneLoader sceneLoader;
 ```
 
 Methoden:
@@ -142,7 +241,27 @@ Methoden:
           break;
   }
   ```
-- `StartGame()`: (Wird von UI-Button aufgerufen) ChangeState(GameState.Running).
+- `StartGame()`: Lädt die Game-Scene und wechselt in den Playing-State.
+  ```csharp
+  public void StartGame() {
+      sceneLoader.LoadScene("Game");
+      ChangeState(GameState.Playing);
+  }
+  ```
+- `ReturnToMenu()`: Lädt das Hauptmenü.
+  ```csharp
+  public void ReturnToMenu() {
+      sceneLoader.LoadScene("MainMenu");
+      ChangeState(GameState.MainMenu);
+  }
+  ```
+- `OpenShop()`: Öffnet den Shop (für spätere Verwendung).
+  ```csharp
+  public void OpenShop() {
+      sceneLoader.LoadScene("Shop");
+      ChangeState(GameState.Shop);
+  }
+  ```
 - `EndGame()`: (Wird von PlayerCollision aufgerufen) ChangeState(GameState.GameOver).
 - `RestartGame()`: (Wird von UI-Button aufgerufen) Time.timeScale = 1; SceneManager.LoadScene(SceneManager.GetActiveScene().name); (Einfachste Reset-Methode).
 
@@ -354,7 +473,71 @@ Methoden:
   }
   ```
 
-3.9. UIManager.cs
+3.9. UI Management (Aktualisiert)
+
+Anstatt eines zentralen UIManagers verwenden wir nun scene-spezifische UI-Skripte:
+
+**MainMenuUI.cs** (in MainMenu.unity):
+```csharp
+public class MainMenuUI : MonoBehaviour {
+    [Header("UI Elements")]
+    public Button playButton;
+    public Button shopButton; // Deaktiviert für später
+    public TextMeshProUGUI highscoreText;
+
+    private void Start() {
+        playButton.onClick.AddListener(OnPlayClicked);
+        shopButton.interactable = false; // Noch nicht implementiert
+        
+        // Highscore laden
+        int highscore = PlayerPrefs.GetInt("HighScore", 0);
+        highscoreText.text = $"Highscore: {highscore}";
+    }
+    
+    private void OnPlayClicked() {
+        GameManager.Instance.StartGame();
+    }
+}
+```
+
+**GameUI.cs** (in Game.unity):
+```csharp
+public class GameUI : MonoBehaviour {
+    public TextMeshProUGUI scoreText;
+    
+    public void UpdateScore(int score) {
+        scoreText.text = $"{score}";
+    }
+}
+```
+
+**GameOverPanel.cs** (in Game.unity):
+```csharp
+public class GameOverPanel : MonoBehaviour {
+    [Header("UI Elements")]
+    public TextMeshProUGUI finalScoreText;
+    public Button restartButton;
+    public Button menuButton;
+    
+    private void Start() {
+        restartButton.onClick.AddListener(OnRestartClicked);
+        menuButton.onClick.AddListener(OnMenuClicked);
+    }
+    
+    public void Show(int score) {
+        gameObject.SetActive(true);
+        finalScoreText.text = $"Score: {score}";
+    }
+    
+    private void OnRestartClicked() {
+        GameManager.Instance.StartGame();
+    }
+    
+    private void OnMenuClicked() {
+        GameManager.Instance.ReturnToMenu();
+    }
+}
+```
 Kategorie: UI
 Verantwortlichkeiten: Aktiviert/Deaktiviert UI-Panels. Aktualisiert Text-Elemente.
 
@@ -584,3 +767,38 @@ Der GameManager steuert den Fluss über das GameState Enum:
 - Auf Android-Gerät builden und testen.
 - (Optional) Sound-Effekte und Partikel hinzufügen.
 - Sicherstellen, dass keine GC Spikes auftreten (Profiler verwenden).
+
+## 🏗️ Architektur-Prinzipien
+* **Multi-Scene-Design:** Saubere Trennung von Core-Logik und Content.
+* **Additive Scene Loading:** Persistent.unity läuft immer, andere Scenes werden dynamisch geladen.
+* **Service Locator Pattern:** Zentraler Zugriffspunkt für zukünftige Services (Ads, IAP, Analytics).
+* **Scene-spezifische UI:** Jede Scene hat eigene UI-Skripte (keine monolithischen Manager).
+* **Erweiterbarkeit:** Vorbereitet für Monetarisierung, ohne bestehenden Code zu ändern.
+
+## 🚀 Entwicklungs-Roadmap
+
+### Phase 1: Core-Architektur ✅ (Aktuell)
+- [x] Multi-Scene-Struktur (Persistent, MainMenu, Game)
+- [x] SceneLoader für Additive Loading
+- [x] ServiceLocator als Service-Hub
+- [x] Dummy-Services (AdService, IAPService) als Platzhalter
+
+### Phase 2: Gameplay-Polish
+- [ ] Audio-System (Musik, SFX)
+- [ ] Partikeleffekte (Kollisionen, Speed-Lines)
+- [ ] Visuelles Feedback (Screen Shake, etc.)
+
+### Phase 3: Monetarisierung (später)
+- [ ] Unity Ads / AdMob Integration
+- [ ] In-App-Käufe (Remove Ads, Skins)
+- [ ] Shop-Scene mit UI
+
+### Phase 4: Content-Erweiterung
+- [ ] Skin-System für Spieler
+- [ ] Verschiedene Tunnel-Themes
+- [ ] Power-Ups (Unverwundbarkeit, Slow-Mo)
+
+### Phase 5: Analytics & Retention
+- [ ] Analytics-Integration
+- [ ] Daily Rewards
+- [ ] Achievements/Leaderboards
