@@ -99,3 +99,12 @@ Dieses Projekt nutzt ein klares, entkoppeltes System, das über den `GameManager
 * [ ] Skin-System für den Spieler
 * [ ] Power-Ups (z.B. Unverwundbarkeit, Slow-Mo)
 * [ ] Verschiedene Tunnel-Themen/Styles
+
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
